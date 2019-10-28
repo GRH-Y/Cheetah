@@ -10,7 +10,7 @@ public abstract class EncryptionSender extends RequestSender {
 
     @Override
     public void sendData(byte[] data) {
-        super.sendData(onEncrypt(data));
+        super.sendDataNow(onEncrypt(data));
     }
 
     @Override

@@ -21,7 +21,7 @@ public class TestConnect extends NioClientTask {
         LogFx.getInstance().printLog("host = " + getHost() + ":" + getPort());
         if (isConnect) {
             LogFx.getInstance().printLog("链接成功");
-            getSender().sendData("fuck you".getBytes());
+            getSender().sendData("ping".getBytes());
         } else {
             LogFx.getInstance().printLog("链接失败");
         }

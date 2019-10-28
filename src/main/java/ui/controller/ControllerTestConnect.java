@@ -1,17 +1,12 @@
 package ui.controller;
 
 import connect.network.nio.NioHPCClientFactory;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.paint.Color;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
-
-import javafx.scene.control.Button;
+import test.PingTask;
 import test.TestConnect;
 import ui.common.LogFx;
 
@@ -35,6 +30,8 @@ public class ControllerTestConnect {
 
     private boolean isOpen = false;
 
+    private PingTask pingTask = null;
+
     public static void showTestConnectScene(Stage stage, String ip, String port) throws IOException {
         ControllerTestConnect controllerTestConnect = BaseController.showScene(stage, "layout_test_connect.fxml", "Test Connect");
         controllerTestConnect.initView(stage, ip, port);
@@ -55,11 +52,13 @@ public class ControllerTestConnect {
         //开始链接测试
         btnTCStart.setOnAction(event -> {
             if (isOpen) {
+                pingTask.stopPing();
                 NioHPCClientFactory.destroy();
                 btnTCStart.setText("Start");
                 isOpen = false;
             } else {
                 initConnect();
+                ping();
                 btnTCStart.setText("Stop");
                 isOpen = true;
             }
@@ -70,6 +69,11 @@ public class ControllerTestConnect {
         TestConnect connect = new TestConnect(tfTCAddress.getText(), Integer.parseInt(tfTCPort.getText()));
         NioHPCClientFactory.getFactory(1).open();
         NioHPCClientFactory.getFactory(1).addTask(connect);
+    }
+
+    private void ping() {
+        pingTask = new PingTask(tfTCAddress.getText());
+        pingTask.startPing();
     }
 
 

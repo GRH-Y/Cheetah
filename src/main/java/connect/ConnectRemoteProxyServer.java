@@ -2,7 +2,6 @@ package connect;
 
 import connect.network.base.joggle.INetSender;
 import connect.network.nio.NioClientTask;
-import connect.network.nio.NioReceive;
 import log.LogDog;
 
 import java.nio.channels.SocketChannel;
@@ -13,9 +12,9 @@ public class ConnectRemoteProxyServer extends NioClientTask {
     public ConnectRemoteProxyServer(INetSender sender, String host, int port) {
         super(host, port);
         this.sender = sender;
-        setConnectTimeout(8000);
+        setConnectTimeout(0);
         setSender(new RequestSender());
-        setReceive(new NioReceive(this, "onReceiveRequestData"));
+        setReceive(new RequestReceive(this, "onReceiveRequestData"));
     }
 
     @Override

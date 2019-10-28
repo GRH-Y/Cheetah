@@ -2,7 +2,6 @@ package connect;
 
 import connect.network.nio.NioClientTask;
 import connect.network.nio.NioHPCClientFactory;
-import connect.network.nio.NioReceive;
 import log.LogDog;
 
 import java.nio.channels.SocketChannel;
@@ -12,9 +11,9 @@ public class LocalProxyClient extends NioClientTask {
 
     public LocalProxyClient(SocketChannel channel, String host, int port) {
         super(channel);
-        setConnectTimeout(8000);
+        setConnectTimeout(0);
         setSender(new RequestSender());
-        setReceive(new NioReceive(this, "onReceiveRequestData"));
+        setReceive(new RequestReceive(this, "onReceiveRequestData"));
         connectRemoteProxyServer = new ConnectRemoteProxyServer(getSender(), host, port);
         NioHPCClientFactory.getFactory().addTask(connectRemoteProxyServer);
     }

@@ -1,9 +1,9 @@
 import connect.network.nio.NioHPCClientFactory;
 import connect.network.nio.NioServerFactory;
-import ui.controller.ControllerConnect;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import task.executor.TaskExecutorPoolManager;
+import ui.controller.ControllerConnect;
 
 public class CheetahMain extends Application {
     @Override

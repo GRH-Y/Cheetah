@@ -69,7 +69,7 @@ public class RSADataEnvoy {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("JDK RSA公钥加密：" + Base64Helper.getHelper().encodeToString(result));
+//        System.out.println("JDK RSA公钥加密：" + Base64Helper.getHelper().encodeToString(result));
         return result;
     }
 
@@ -90,7 +90,7 @@ public class RSADataEnvoy {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("JDK RSA私钥解密：" + new String(result));
+//        System.out.println("JDK RSA私钥解密：" + new String(result));
         return result;
     }
 
@@ -112,7 +112,7 @@ public class RSADataEnvoy {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("JDK RSA私钥加密：" + Base64Helper.getHelper().encodeToString(result));
+//        System.out.println("JDK RSA私钥加密：" + Base64Helper.getHelper().encodeToString(result));
         return result;
     }
 
@@ -135,7 +135,7 @@ public class RSADataEnvoy {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("JDK RSA公钥解密：" + new String(result));
+//        System.out.println("JDK RSA公钥解密：" + new String(result));
         return result;
     }
 
