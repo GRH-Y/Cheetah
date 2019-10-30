@@ -13,7 +13,7 @@ public class TestConnect extends NioClientTask {
         super(host, port);
         setConnectTimeout(0);
         setReceive(new NioReceive());
-        setSender(new NioSender());
+        setSender(new NioSender(this));
     }
 
     @Override

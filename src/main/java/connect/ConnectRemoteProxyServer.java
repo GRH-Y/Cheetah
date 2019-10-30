@@ -13,7 +13,7 @@ public class ConnectRemoteProxyServer extends NioClientTask {
         super(host, port);
         this.sender = sender;
         setConnectTimeout(0);
-        setSender(new RequestSender());
+        setSender(new RequestSender(this));
         setReceive(new RequestReceive(this, "onReceiveRequestData"));
     }
 

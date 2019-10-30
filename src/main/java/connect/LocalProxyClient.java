@@ -12,7 +12,7 @@ public class LocalProxyClient extends NioClientTask {
     public LocalProxyClient(SocketChannel channel, String host, int port) {
         super(channel);
         setConnectTimeout(0);
-        setSender(new RequestSender());
+        setSender(new RequestSender(this));
         setReceive(new RequestReceive(this, "onReceiveRequestData"));
         connectRemoteProxyServer = new ConnectRemoteProxyServer(getSender(), host, port);
         NioHPCClientFactory.getFactory().addTask(connectRemoteProxyServer);
