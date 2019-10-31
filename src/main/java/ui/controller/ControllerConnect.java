@@ -3,6 +3,7 @@ package ui.controller;
 import config.AnalysisConfig;
 import connect.LocalProxyServer;
 import connect.network.nio.NioServerFactory;
+import encryption.RSADataEnvoy;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
@@ -55,6 +56,8 @@ public class ControllerConnect {
     private MenuItem miAbout;
 
     private static boolean isOpen = false;
+    private static final String FILE_PUBLIC_KEY = "public.key";
+    private static final String FILE_PRIVATE_KEY = "private.key";
     private static final String FILE_CONFIG = "config.cfg";
     private final String defaultPort = "8877";
 
@@ -96,6 +99,12 @@ public class ControllerConnect {
         return filePath;
     }
 
+    private void initRSA() {
+        String publicKey = initEnv(FILE_PUBLIC_KEY);
+        String privateKey = initEnv(FILE_PRIVATE_KEY);
+        RSADataEnvoy.getInstance().init(publicKey, privateKey);
+    }
+
     private void init(Stage stage) {
         String configFile = initEnv(FILE_CONFIG);
         String host = null;
@@ -113,6 +122,8 @@ public class ControllerConnect {
         if (StringEnvoy.isEmpty(port)) {
             port = defaultPort;
         }
+
+        initRSA();
 
         tfLocalHost.setText(host);
         tfLocalPort.setText(port);
