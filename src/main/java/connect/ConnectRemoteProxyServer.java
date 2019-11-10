@@ -2,8 +2,8 @@ package connect;
 
 import connect.network.base.joggle.INetSender;
 import connect.network.nio.NioClientTask;
-import encryption.RSAReceive;
-import encryption.RSASender;
+import encryption.AESReceive;
+import encryption.AESSender;
 import log.LogDog;
 
 import java.nio.channels.SocketChannel;
@@ -15,8 +15,8 @@ public class ConnectRemoteProxyServer extends NioClientTask {
         super(host, port);
         this.sender = sender;
         setConnectTimeout(0);
-        setSender(new RSASender(this));
-        setReceive(new RSAReceive(this, "onReceiveRequestData"));
+        setSender(new AESSender(this));
+        setReceive(new AESReceive(this, "onReceiveRequestData"));
     }
 
     @Override
