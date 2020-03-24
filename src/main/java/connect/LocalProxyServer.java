@@ -2,7 +2,6 @@ package connect;
 
 import connect.network.nio.NioHPCClientFactory;
 import connect.network.nio.NioServerTask;
-import connect.network.nio.SimpleSendTask;
 import log.LogDog;
 import util.StringEnvoy;
 
@@ -20,13 +19,14 @@ public class LocalProxyServer extends NioServerTask {
         }
         this.remoteHost = remoteHost;
         this.remotePort = remotePort;
-        setAddress(localHost, localPort);
+        setAddress(localHost, localPort, false);
     }
 
     @Override
-    protected void onConfigServer(boolean isSuccess, ServerSocketChannel channel) {
+    protected void onBootServerComplete(boolean isSuccess, ServerSocketChannel channel) {
         LogDog.d("==> Local Proxy Server status = " + isSuccess);
         LogDog.d("==> HttpProxy Server address = " + getServerHost() + ":" + getServerPort());
+        LogDog.d("==> Remote Server address = " + remoteHost + ":" + remotePort);
         if (isSuccess) {
             NioHPCClientFactory.getFactory(1).open();
         }
@@ -34,14 +34,13 @@ public class LocalProxyServer extends NioServerTask {
 
     @Override
     protected void onAcceptServerChannel(SocketChannel channel) {
-        LocalProxyClient proxyServer = new LocalProxyClient(channel, remoteHost, remotePort);
-        NioHPCClientFactory.getFactory().addTask(proxyServer);
+        LocalProxyClient localProxyClient = new LocalProxyClient(channel, remoteHost, remotePort);
+        NioHPCClientFactory.getFactory().addTask(localProxyClient);
     }
 
     @Override
     protected void onCloseServerChannel() {
         LogDog.e("==> Local Proxy Server close ing... !!! ");
         NioHPCClientFactory.destroy();
-        SimpleSendTask.getInstance().close();
     }
 }

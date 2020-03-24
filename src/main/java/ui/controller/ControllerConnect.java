@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Map;
 import java.util.Properties;
 
 public class ControllerConnect {
@@ -107,23 +106,22 @@ public class ControllerConnect {
 
     private void init(Stage stage) {
         String configFile = initEnv(FILE_CONFIG);
-        String host = null;
-        String port = null;
-        String image = null;
-        Map<String, String> configMap = AnalysisConfig.analysis(configFile);
-        if (configMap != null) {
-            host = configMap.get("host");
-            port = configMap.get("port");
-            image = configMap.get("image");
-        }
+        AnalysisConfig.getInstance().analysis(configFile);
+        String host = AnalysisConfig.getInstance().getValue("host");
+        String port = AnalysisConfig.getInstance().getValue("port");
+        String image = AnalysisConfig.getInstance().getValue("image");
+        boolean isEnableRSA = AnalysisConfig.getInstance().getBooleanValue("enableRSA");
+
         if (StringEnvoy.isEmpty(host) || "auto".equals(host)) {
-            host = NetUtils.getLocalIp("eth2");
+            host = NetUtils.getLocalIp("eth0");
         }
         if (StringEnvoy.isEmpty(port)) {
             port = defaultPort;
         }
 
-        initRSA();
+        if (isEnableRSA) {
+            initRSA();
+        }
 
         tfLocalHost.setText(host);
         tfLocalPort.setText(port);

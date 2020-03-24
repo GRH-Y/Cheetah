@@ -1,28 +1,20 @@
 package encryption;
 
 
-import connect.RequestSender;
-import connect.network.nio.NioClientTask;
+import connect.CacheNioSender;
+
+import java.io.IOException;
 
 /**
  * 加密发送者
  */
-public abstract class EncryptionSender extends RequestSender {
+public abstract class EncryptionSender extends CacheNioSender {
 
-    public EncryptionSender(NioClientTask clientTask) {
-        super(clientTask);
-    }
 
     @Override
-    public void sendData(byte[] data) {
-        super.sendDataNow(onEncrypt(data));
+    public void sendData(byte[] data) throws IOException {
+        super.sendData(onEncrypt(data));
     }
-
-    @Override
-    public void sendDataNow(byte[] data) {
-        super.sendDataNow(onEncrypt(data));
-    }
-
 
     abstract byte[] onEncrypt(byte[] src);
 }

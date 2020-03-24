@@ -1,31 +1,34 @@
 package connect;
 
+import config.AnalysisConfig;
 import connect.network.base.joggle.INetSender;
-import connect.network.nio.NioClientTask;
-import encryption.RSAReceive;
-import encryption.RSASender;
+import encryption.AESReceiver;
+import encryption.AESSender;
 import log.LogDog;
 
+import javax.net.ssl.SSLEngine;
 import java.nio.channels.SocketChannel;
 
-public class ConnectRemoteProxyServer extends NioClientTask {
-    private INetSender sender;
+public class ConnectRemoteProxyServer extends AbsConnectClient {
 
-    public ConnectRemoteProxyServer(INetSender sender, String host, int port) {
-        super(host, port);
-        this.sender = sender;
-        setConnectTimeout(0);
-        setSender(new RSASender(this));
-        setReceive(new RSAReceive(this, "onReceiveRequestData"));
+    public ConnectRemoteProxyServer(INetSender localSender, String host, int port) {
+        setAddress(host, port, false);
+        boolean isEnableRSA = AnalysisConfig.getInstance().getBooleanValue("enableRSA");
+        if (isEnableRSA) {
+            setReceive(new AESReceiver(localSender));
+            setSender(new AESSender());
+        } else {
+            setReceive(new RemoteRequestReceive(localSender));
+            setSender(new CacheNioSender());
+        }
     }
 
     @Override
-    protected void onConfigSocket(boolean isConnect, SocketChannel channel) {
+    protected void onConnectCompleteChannel(boolean isConnect, SocketChannel channel, SSLEngine sslEngine) {
+        if (isConnect) {
+            getSender().setChannel(channel);
+        }
         LogDog.d("==> connect Remote Proxy Server ing ... status = " + isConnect);
     }
 
-    private void onReceiveRequestData(byte[] data) {
-        LogDog.d("==> Receive Remote Proxy Server data !!! ");
-        sender.sendData(data);
-    }
 }
