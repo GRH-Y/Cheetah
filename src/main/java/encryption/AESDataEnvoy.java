@@ -54,7 +54,6 @@ public class AESDataEnvoy {
             cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
             encrypted = cipher.doFinal(raw);
             encrypted = Base64.getEncoder().encode(encrypted);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
