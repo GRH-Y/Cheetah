@@ -1,9 +1,12 @@
 package ui.controller;
 
 import config.AnalysisConfig;
-import connect.LocalProxyServer;
+import connect.clinet.LocalProxyServer;
 import connect.network.nio.NioServerFactory;
-import encryption.RSADataEnvoy;
+import cryption.EncryptionType;
+import cryption.RSADataEnvoy;
+import intercept.BuiltInProxyFilter;
+import intercept.ProxyFilterManager;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
@@ -58,6 +61,7 @@ public class ControllerConnect {
     private static final String FILE_PUBLIC_KEY = "public.key";
     private static final String FILE_PRIVATE_KEY = "private.key";
     private static final String FILE_CONFIG = "config.cfg";
+    private static final String FILE_AT = "AddressTable.dat";
     private final String defaultPort = "8877";
 
     public static void showLoginScene(Stage stage) throws IOException {
@@ -74,7 +78,9 @@ public class ControllerConnect {
         if ("CheetahMain".equals(value)) {
             //ide运行模式，则不创建文件
             URL url = getClass().getClassLoader().getResource(configFile);
-            filePath = url.getPath();
+            if (url != null) {
+                filePath = url.getPath();
+            }
         } else {
             String dirPath = properties.getProperty("user.dir");
             File atFile = new File(dirPath, configFile);
@@ -104,35 +110,53 @@ public class ControllerConnect {
         RSADataEnvoy.getInstance().init(publicKey, privateKey);
     }
 
+    private void initProxyFilter() {
+        boolean intercept = AnalysisConfig.getInstance().getBooleanValue("intercept");
+        if (intercept) {
+//        String interceptFile = AnalysisConfig.getInstance().getValue("interceptFile");
+            String interceptFile = initEnv(FILE_AT);
+            //初始化地址过滤器
+            BuiltInProxyFilter proxyFilter = new BuiltInProxyFilter();
+            proxyFilter.init(interceptFile);
+            ProxyFilterManager.getInstance().addFilter(proxyFilter);
+        }
+    }
+
     private void init(Stage stage) {
         String configFile = initEnv(FILE_CONFIG);
+        //解析配置文件
         AnalysisConfig.getInstance().analysis(configFile);
-        String host = AnalysisConfig.getInstance().getValue("host");
-        String port = AnalysisConfig.getInstance().getValue("port");
-        String image = AnalysisConfig.getInstance().getValue("image");
-        boolean isEnableRSA = AnalysisConfig.getInstance().getBooleanValue("enableRSA");
-
-        if (StringEnvoy.isEmpty(host) || "auto".equals(host)) {
-            host = NetUtils.getLocalIp("eth0");
-        }
-        if (StringEnvoy.isEmpty(port)) {
-            port = defaultPort;
-        }
-
-        if (isEnableRSA) {
+        //初始化过滤器
+        initProxyFilter();
+        //如果是RSA加密则初始化公钥和私钥
+        String encryption = AnalysisConfig.getInstance().getValue("encryptionMode");
+        if (EncryptionType.RSA.name().equals(encryption)) {
             initRSA();
         }
 
-        tfLocalHost.setText(host);
-        tfLocalPort.setText(port);
+        String localHost = AnalysisConfig.getInstance().getValue("localHost");
+        String localPort = AnalysisConfig.getInstance().getValue("localPort");
+        String remoteHost = AnalysisConfig.getInstance().getValue("remoteHost");
+        String remotePort = AnalysisConfig.getInstance().getValue("remotePort");
+        String image = AnalysisConfig.getInstance().getValue("image");
+
+        if (StringEnvoy.isEmpty(localHost) || "auto".equals(localHost)) {
+            localHost = NetUtils.getLocalIp("eth0");
+        }
+        if (StringEnvoy.isEmpty(localPort)) {
+            localPort = defaultPort;
+        }
+
+        tfLocalHost.setText(localHost);
+        tfLocalPort.setText(localPort);
+        tfRemoteHost.setText(remoteHost);
+        tfRemotePort.setText(remotePort);
 
         miAbout.setOnAction(event -> LogDog.d("about"));
         miCheckUpdate.setOnAction(event -> LogDog.d("CheckUpdate"));
         miTestConnect.setOnAction(event -> {
             try {
-                String remoteHost = tfRemoteHost.getText();
-                String remotePort = tfRemotePort.getText();
-                ControllerTestConnect.showTestConnectScene(stage, remoteHost, remotePort);
+                ControllerTestConnect.showTestConnectScene(stage, tfRemoteHost.getText(), tfRemotePort.getText());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -147,13 +171,16 @@ public class ControllerConnect {
                 connectButton.setText("Start connect");
                 isOpen = false;
             } else {
-                String localHost = tfLocalHost.getText();
-                String localPort = tfLocalPort.getText();
-                String remoteHost = tfRemoteHost.getText();
-                String remotePort = tfRemotePort.getText();
-                initServer(localHost, Integer.parseInt(localPort), remoteHost, Integer.parseInt(remotePort));
-                isOpen = true;
-                connectButton.setText("Stop connect");
+                boolean isServerMode = AnalysisConfig.getInstance().getBooleanValue("isServerMode");
+                if (!isServerMode) {
+                    try {
+                        initServer(tfLocalHost.getText(), Integer.parseInt(tfLocalPort.getText()), tfRemoteHost.getText(), Integer.parseInt(tfRemotePort.getText()));
+                        isOpen = true;
+                        connectButton.setText("Stop connect");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         });
         //显示首页图片
