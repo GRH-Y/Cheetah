@@ -61,7 +61,8 @@ public class ControllerConnect {
     private static final String FILE_PUBLIC_KEY = "public.key";
     private static final String FILE_PRIVATE_KEY = "private.key";
     private static final String FILE_CONFIG = "config.cfg";
-    private static final String FILE_AT = "AddressTable.dat";
+    //    private static final String FILE_INTERCEPT = "interceptTable.dat";
+//    private static final String FILE_INTERCEPT = "proxyTable.dat";
     private final String defaultPort = "8877";
 
     public static void showLoginScene(Stage stage) throws IOException {
@@ -110,14 +111,26 @@ public class ControllerConnect {
         RSADataEnvoy.getInstance().init(publicKey, privateKey);
     }
 
-    private void initProxyFilter() {
+    private void initInterceptFilter() {
         boolean intercept = AnalysisConfig.getInstance().getBooleanValue("intercept");
         if (intercept) {
-//        String interceptFile = AnalysisConfig.getInstance().getValue("interceptFile");
-            String interceptFile = initEnv(FILE_AT);
+            String configInterceptFile = AnalysisConfig.getInstance().getValue("interceptFile");
+            String interceptFile = initEnv(configInterceptFile);
             //初始化地址过滤器
             BuiltInProxyFilter proxyFilter = new BuiltInProxyFilter();
             proxyFilter.init(interceptFile);
+            ProxyFilterManager.getInstance().addFilter(proxyFilter);
+        }
+    }
+
+    private void initProxyFilter() {
+        boolean intercept = AnalysisConfig.getInstance().getBooleanValue("intercept");
+        if (intercept) {
+            String configProxyFile = AnalysisConfig.getInstance().getValue("proxyFile");
+            String proxyFile = initEnv(configProxyFile);
+            //初始化地址过滤器
+            BuiltInProxyFilter proxyFilter = new BuiltInProxyFilter();
+            proxyFilter.init(proxyFile);
             ProxyFilterManager.getInstance().addFilter(proxyFilter);
         }
     }
@@ -127,6 +140,7 @@ public class ControllerConnect {
         //解析配置文件
         AnalysisConfig.getInstance().analysis(configFile);
         //初始化过滤器
+        initInterceptFilter();
         initProxyFilter();
         //如果是RSA加密则初始化公钥和私钥
         String encryption = AnalysisConfig.getInstance().getValue("encryptionMode");
