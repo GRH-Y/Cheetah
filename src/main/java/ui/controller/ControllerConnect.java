@@ -1,11 +1,13 @@
 package ui.controller;
 
 import config.AnalysisConfig;
+import config.ConfigKey;
 import connect.clinet.LocalProxyServer;
 import connect.network.nio.NioServerFactory;
 import cryption.EncryptionType;
 import cryption.RSADataEnvoy;
-import intercept.BuiltInProxyFilter;
+import intercept.BuiltInInterceptFilter;
+import intercept.InterceptFilterManager;
 import intercept.ProxyFilterManager;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -58,11 +60,6 @@ public class ControllerConnect {
     private MenuItem miAbout;
 
     private static boolean isOpen = false;
-    private static final String FILE_PUBLIC_KEY = "public.key";
-    private static final String FILE_PRIVATE_KEY = "private.key";
-    private static final String FILE_CONFIG = "config.cfg";
-    //    private static final String FILE_INTERCEPT = "interceptTable.dat";
-//    private static final String FILE_INTERCEPT = "proxyTable.dat";
     private final String defaultPort = "8877";
 
     public static void showLoginScene(Stage stage) throws IOException {
@@ -106,53 +103,48 @@ public class ControllerConnect {
     }
 
     private void initRSA() {
-        String publicKey = initEnv(FILE_PUBLIC_KEY);
-        String privateKey = initEnv(FILE_PRIVATE_KEY);
+        String publicKey = initEnv(ConfigKey.FILE_PUBLIC_KEY);
+        String privateKey = initEnv(ConfigKey.FILE_PRIVATE_KEY);
         RSADataEnvoy.getInstance().init(publicKey, privateKey);
     }
 
     private void initInterceptFilter() {
-        boolean intercept = AnalysisConfig.getInstance().getBooleanValue("intercept");
+        boolean intercept = AnalysisConfig.getInstance().getBooleanValue(ConfigKey.CONFIG_INTERCEPT);
         if (intercept) {
-            String configInterceptFile = AnalysisConfig.getInstance().getValue("interceptFile");
+            String configInterceptFile = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_INTERCEPT);
             String interceptFile = initEnv(configInterceptFile);
             //初始化地址过滤器
-            BuiltInProxyFilter proxyFilter = new BuiltInProxyFilter();
+            BuiltInInterceptFilter proxyFilter = new BuiltInInterceptFilter();
             proxyFilter.init(interceptFile);
-            ProxyFilterManager.getInstance().addFilter(proxyFilter);
+            InterceptFilterManager.getInstance().addFilter(proxyFilter);
         }
     }
 
     private void initProxyFilter() {
-        boolean intercept = AnalysisConfig.getInstance().getBooleanValue("intercept");
-        if (intercept) {
-            String configProxyFile = AnalysisConfig.getInstance().getValue("proxyFile");
-            String proxyFile = initEnv(configProxyFile);
-            //初始化地址过滤器
-            BuiltInProxyFilter proxyFilter = new BuiltInProxyFilter();
-            proxyFilter.init(proxyFile);
-            ProxyFilterManager.getInstance().addFilter(proxyFilter);
-        }
+        String configProxyFile = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_PROXY);
+        String proxyFile = initEnv(configProxyFile);
+        //初始化地址过滤器
+        ProxyFilterManager.getInstance().loadProxyTable(proxyFile);
     }
 
     private void init(Stage stage) {
-        String configFile = initEnv(FILE_CONFIG);
+        String configFile = initEnv(ConfigKey.FILE_CONFIG);
         //解析配置文件
         AnalysisConfig.getInstance().analysis(configFile);
         //初始化过滤器
         initInterceptFilter();
         initProxyFilter();
         //如果是RSA加密则初始化公钥和私钥
-        String encryption = AnalysisConfig.getInstance().getValue("encryptionMode");
+        String encryption = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_ENCRYPTION_MODE);
         if (EncryptionType.RSA.name().equals(encryption)) {
             initRSA();
         }
 
-        String localHost = AnalysisConfig.getInstance().getValue("localHost");
-        String localPort = AnalysisConfig.getInstance().getValue("localPort");
-        String remoteHost = AnalysisConfig.getInstance().getValue("remoteHost");
-        String remotePort = AnalysisConfig.getInstance().getValue("remotePort");
-        String image = AnalysisConfig.getInstance().getValue("image");
+        String localHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_LOCAL_HOST);
+        String localPort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_LOCAL_PORT);
+        String remoteHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_HOST);
+        String remotePort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PORT);
+        String image = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_IMAGE);
 
         if (StringEnvoy.isEmpty(localHost) || "auto".equals(localHost)) {
             localHost = NetUtils.getLocalIp("eth0");
@@ -185,7 +177,7 @@ public class ControllerConnect {
                 connectButton.setText("Start connect");
                 isOpen = false;
             } else {
-                boolean isServerMode = AnalysisConfig.getInstance().getBooleanValue("isServerMode");
+                boolean isServerMode = AnalysisConfig.getInstance().getBooleanValue(ConfigKey.CONFIG_IS_SERVER_MODE);
                 if (!isServerMode) {
                     try {
                         initServer(tfLocalHost.getText(), Integer.parseInt(tfLocalPort.getText()), tfRemoteHost.getText(), Integer.parseInt(tfRemotePort.getText()));
