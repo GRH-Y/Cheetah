@@ -9,7 +9,9 @@ import cryption.RSADataEnvoy;
 import intercept.BuiltInInterceptFilter;
 import intercept.InterceptFilterManager;
 import intercept.ProxyFilterManager;
+import intercept.WatchConfigFileTask;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -63,8 +65,9 @@ public class ControllerConnect {
     private final String defaultPort = "8877";
 
     public static void showLoginScene(Stage stage) throws IOException {
-        ControllerConnect controllerConfig = BaseController.showScene(stage, "layout_connect.fxml", "Cheetah");
-        controllerConfig.init(stage);
+        FXMLLoader fxmlLoader = BaseController.showScene(stage, "layout_connect.fxml", "Cheetah");
+        ControllerConnect controllerConnect = fxmlLoader.getController();
+        controllerConnect.init();
     }
 
     private String initEnv(String configFile) {
@@ -127,13 +130,37 @@ public class ControllerConnect {
         ProxyFilterManager.getInstance().loadProxyTable(proxyFile);
     }
 
-    private void init(Stage stage) {
+    private void initWatch() {
+        Properties properties = System.getProperties();
+        String value = properties.getProperty("sun.java.command");
+        String dirPath = properties.getProperty("user.dir");
+        String targetPath;
+        String configInterceptFile = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_INTERCEPT);
+        if ("CheetahMain".equals(value)) {
+            //idea模式下
+            targetPath = dirPath + "\\out\\production\\resources\\" + configInterceptFile;
+        } else {
+            targetPath = dirPath + "\\" + configInterceptFile;
+        }
+        try {
+            WatchConfigFileTask watchConfigFileTask = new WatchConfigFileTask(targetPath);
+            TaskExecutorPoolManager.getInstance().runTask(watchConfigFileTask, null);
+        } catch (Exception e) {
+            LogDog.e("==> targetPath = " + targetPath + " " + e.getMessage());
+//            e.printStackTrace();
+        }
+    }
+
+    private void init() {
         String configFile = initEnv(ConfigKey.FILE_CONFIG);
         //解析配置文件
         AnalysisConfig.getInstance().analysis(configFile);
-        //初始化过滤器
+        //初始化拦截黑名单过滤器
         initInterceptFilter();
+        //初始化强制代理管理器
         initProxyFilter();
+        //初始化监听黑名单文件修改
+        initWatch();
         //如果是RSA加密则初始化公钥和私钥
         String encryption = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_ENCRYPTION_MODE);
         if (EncryptionType.RSA.name().equals(encryption)) {
@@ -162,7 +189,7 @@ public class ControllerConnect {
         miCheckUpdate.setOnAction(event -> LogDog.d("CheckUpdate"));
         miTestConnect.setOnAction(event -> {
             try {
-                ControllerTestConnect.showTestConnectScene(stage, tfRemoteHost.getText(), tfRemotePort.getText());
+                ControllerTestConnect.showTestConnectScene(tfRemoteHost.getText(), tfRemotePort.getText());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -201,7 +228,6 @@ public class ControllerConnect {
         NioServerFactory.getFactory().open();
         NioServerFactory.getFactory().addTask(localProxyServer);
     }
-
 
     private class ShowImageTask extends BaseLoopTask {
 

@@ -14,13 +14,13 @@ public class BaseController {
     private BaseController() {
     }
 
-    public static <T> T showScene(Stage stage, String fxml, String title) throws IOException {
+    public static FXMLLoader showScene(Stage stage, String fxml, String title) throws IOException {
         FXMLLoader fxmlLoader = getFXMLLoader(fxml);
         Parent root = fxmlLoader.load();
-        Scene loginScene = new Scene(root);
+        Scene newScene = new Scene(root);
         stage.setTitle(title);
-        stage.setScene(loginScene);
-        return fxmlLoader.getController();
+        stage.setScene(newScene);
+        return fxmlLoader;
     }
 
     public static FXMLLoader getFXMLLoader(String fxml) {

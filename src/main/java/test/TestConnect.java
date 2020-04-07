@@ -1,6 +1,7 @@
 package test;
 
 import connect.network.nio.NioClientTask;
+import connect.network.nio.NioHPCClientFactory;
 import connect.network.nio.NioReceiver;
 import connect.network.nio.NioSender;
 import ui.common.LogFx;
@@ -21,5 +22,10 @@ public class TestConnect extends NioClientTask {
         setSender(new NioSender(channel));
         getSender().sendData("ping".getBytes());
         LogFx.getInstance().printLog("链接成功");
+    }
+
+    @Override
+    protected void onRecovery() {
+        NioHPCClientFactory.destroy();
     }
 }

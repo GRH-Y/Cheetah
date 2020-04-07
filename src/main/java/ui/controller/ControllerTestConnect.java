@@ -2,6 +2,7 @@ package ui.controller;
 
 import connect.network.nio.NioHPCClientFactory;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.text.TextFlow;
@@ -15,7 +16,7 @@ import java.io.IOException;
 public class ControllerTestConnect {
 
     @FXML
-    private Button btnTCBack;
+    private Button btnClear;
 
     @FXML
     private Button btnTCStart;
@@ -30,24 +31,36 @@ public class ControllerTestConnect {
 
     private boolean isOpen = false;
 
-    private PingTask pingTask = null;
+    private static PingTask pingTask = null;
 
-    public static void showTestConnectScene(Stage stage, String ip, String port) throws IOException {
-        ControllerTestConnect controllerTestConnect = BaseController.showScene(stage, "layout_test_connect.fxml", "Test Connect");
-        controllerTestConnect.initView(stage, ip, port);
+    public static boolean isShow = false;
+
+
+    public static void showTestConnectScene(String ip, String port) throws IOException {
+        if (isShow) {
+            return;
+        }
+        Stage newStage = new Stage();
+        FXMLLoader fxmlLoader = BaseController.showScene(newStage, "layout_test_connect.fxml", "Test Connect");
+        ControllerTestConnect controllerTestConnect = fxmlLoader.getController();
+        controllerTestConnect.initView(ip, port);
+        newStage.show();
+        newStage.setOnCloseRequest(event -> {
+            isShow = false;
+            if (pingTask != null) {
+                pingTask.stopPing();
+            }
+        });
+        isShow = true;
     }
 
-    private void initView(Stage stage, String ip, String port) {
+    private void initView(String ip, String port) {
         LogFx.getInstance().init(tfLogContent);
         tfTCAddress.setText(ip);
         tfTCPort.setText(port);
-        //返回上一个界面
-        btnTCBack.setOnAction(event -> {
-            try {
-                ControllerConnect.showLoginScene(stage);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        //清楚界面输出
+        btnClear.setOnAction(event -> {
+            tfLogContent.getChildren().clear();
         });
         //开始链接测试
         btnTCStart.setOnAction(event -> {
