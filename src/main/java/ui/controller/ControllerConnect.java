@@ -6,10 +6,7 @@ import connect.clinet.LocalProxyServer;
 import connect.network.nio.NioServerFactory;
 import cryption.EncryptionType;
 import cryption.RSADataEnvoy;
-import intercept.BuiltInInterceptFilter;
-import intercept.InterceptFilterManager;
-import intercept.ProxyFilterManager;
-import intercept.WatchConfigFileTask;
+import intercept.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
@@ -130,25 +127,28 @@ public class ControllerConnect {
         ProxyFilterManager.getInstance().loadProxyTable(proxyFile);
     }
 
-    private void initWatch() {
+    private void initWatchFile() {
         Properties properties = System.getProperties();
         String value = properties.getProperty("sun.java.command");
         String dirPath = properties.getProperty("user.dir");
-        String targetPath;
+        String interceptFile;
+        String proxyFile;
         String configInterceptFile = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_INTERCEPT);
+        String configIProxyFile = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_PROXY);
         if ("CheetahMain".equals(value)) {
             //idea模式下
-            targetPath = dirPath + "\\out\\production\\resources\\" + configInterceptFile;
+            interceptFile = dirPath + "\\out\\production\\resources\\" + configInterceptFile;
+            proxyFile = dirPath + "\\out\\production\\resources\\" + configIProxyFile;
         } else {
-            targetPath = dirPath + "\\" + configInterceptFile;
+            interceptFile = dirPath + "\\" + configInterceptFile;
+            proxyFile = dirPath + "\\" + configIProxyFile;
         }
-        try {
-            WatchConfigFileTask watchConfigFileTask = new WatchConfigFileTask(targetPath);
-            TaskExecutorPoolManager.getInstance().runTask(watchConfigFileTask, null);
-        } catch (Exception e) {
-            LogDog.e("==> targetPath = " + targetPath + " " + e.getMessage());
-//            e.printStackTrace();
-        }
+        //添加 interceptTable.dat 文件的修改监听
+        InterceptFileChangeListener interceptFileChangeListener = new InterceptFileChangeListener(interceptFile);
+        WatchConfigFileTask.getInstance().addWatchFile(interceptFileChangeListener);
+        //添加 proxyTable.dat 文件的修改监听
+        ProxyFileChangeListener proxyFileChangeListener = new ProxyFileChangeListener(proxyFile);
+        WatchConfigFileTask.getInstance().addWatchFile(proxyFileChangeListener);
     }
 
     private void init() {
@@ -160,7 +160,7 @@ public class ControllerConnect {
         //初始化强制代理管理器
         initProxyFilter();
         //初始化监听黑名单文件修改
-        initWatch();
+        initWatchFile();
         //如果是RSA加密则初始化公钥和私钥
         String encryption = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_ENCRYPTION_MODE);
         if (EncryptionType.RSA.name().equals(encryption)) {

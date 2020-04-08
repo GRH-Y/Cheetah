@@ -1,5 +1,6 @@
-import connect.network.nio.NioHPCClientFactory;
+import connect.network.nio.NioClientFactory;
 import connect.network.nio.NioServerFactory;
+import intercept.WatchConfigFileTask;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import task.executor.TaskExecutorPoolManager;
@@ -12,8 +13,9 @@ public class CheetahMain extends Application {
         primaryStage.setResizable(false);
         primaryStage.show();
         primaryStage.setOnCloseRequest(event -> {
-            NioHPCClientFactory.destroy();
+            NioClientFactory.destroy();
             NioServerFactory.destroy();
+            WatchConfigFileTask.getInstance().destroy();
             TaskExecutorPoolManager.getInstance().destroyAll();
         });
     }
