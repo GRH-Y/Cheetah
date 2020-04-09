@@ -131,23 +131,17 @@ public class ControllerConnect {
         Properties properties = System.getProperties();
         String value = properties.getProperty("sun.java.command");
         String dirPath = properties.getProperty("user.dir");
-        String interceptFile;
-        String proxyFile;
-        String configInterceptFile = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_INTERCEPT);
-        String configIProxyFile = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_PROXY);
+        String interceptFileName = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_INTERCEPT);
+        String proxyFileName = AnalysisConfig.getInstance().getValue(ConfigKey.FILE_PROXY);
         if ("CheetahMain".equals(value)) {
             //idea模式下
-            interceptFile = dirPath + "\\out\\production\\resources\\" + configInterceptFile;
-            proxyFile = dirPath + "\\out\\production\\resources\\" + configIProxyFile;
-        } else {
-            interceptFile = dirPath + "\\" + configInterceptFile;
-            proxyFile = dirPath + "\\" + configIProxyFile;
+            dirPath = dirPath + "\\out\\production\\resources";
         }
         //添加 interceptTable.dat 文件的修改监听
-        InterceptFileChangeListener interceptFileChangeListener = new InterceptFileChangeListener(interceptFile);
+        InterceptFileChangeListener interceptFileChangeListener = new InterceptFileChangeListener(dirPath, interceptFileName);
         WatchConfigFileTask.getInstance().addWatchFile(interceptFileChangeListener);
         //添加 proxyTable.dat 文件的修改监听
-        ProxyFileChangeListener proxyFileChangeListener = new ProxyFileChangeListener(proxyFile);
+        ProxyFileChangeListener proxyFileChangeListener = new ProxyFileChangeListener(dirPath, proxyFileName);
         WatchConfigFileTask.getInstance().addWatchFile(proxyFileChangeListener);
     }
 
