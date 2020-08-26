@@ -1,5 +1,7 @@
 package ui.controller;
 
+import config.AnalysisConfig;
+import config.ConfigKey;
 import connect.network.nio.NioHPCClientFactory;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -36,14 +38,16 @@ public class ControllerTestConnect {
     public static boolean isShow = false;
 
 
-    public static void showTestConnectScene(String ip, String port) throws IOException {
+    public static void showTestConnectScene() throws IOException {
         if (isShow) {
             return;
         }
         Stage newStage = new Stage();
         FXMLLoader fxmlLoader = BaseController.showScene(newStage, "layout_test_connect.fxml", "Test Connect");
         ControllerTestConnect controllerTestConnect = fxmlLoader.getController();
-        controllerTestConnect.initView(ip, port);
+        String remoteHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_HOST);
+        String remotePort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PORT);
+        controllerTestConnect.initView(remoteHost, remotePort);
         newStage.show();
         newStage.setOnCloseRequest(event -> {
             isShow = false;

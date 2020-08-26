@@ -2,21 +2,21 @@ package ui.controller;
 
 import config.AnalysisConfig;
 import config.ConfigKey;
-import connect.clinet.LocalProxyServer;
+import connect.network.base.RequestMode;
 import connect.network.nio.NioServerFactory;
+import connect.network.xhttp.XHttpConnect;
+import connect.network.xhttp.entity.XRequest;
+import connect.network.xhttp.entity.XResponse;
+import connect.server.MultipleProxyServer;
 import cryption.EncryptionType;
 import cryption.RSADataEnvoy;
 import intercept.*;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import log.LogDog;
 import storage.FileHelper;
@@ -25,13 +25,14 @@ import task.executor.TaskExecutorPoolManager;
 import util.IoEnvoy;
 import util.NetUtils;
 import util.StringEnvoy;
+import util.joggle.JavKeep;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class ControllerConnect {
@@ -166,9 +167,7 @@ public class ControllerConnect {
 
         localHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_LOCAL_HOST);
         localPort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_LOCAL_PORT);
-        String remoteHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_HOST);
-        String remotePort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PORT);
-        String image = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_IMAGE);
+        String imageUrl = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_IMAGE);
 
         if (StringEnvoy.isEmpty(localHost) || "auto".equals(localHost)) {
             localHost = NetUtils.getLocalIp("eth0");
@@ -181,7 +180,7 @@ public class ControllerConnect {
         miCheckUpdate.setOnAction(event -> LogDog.d("Update function development..."));
         miTestConnect.setOnAction(event -> {
             try {
-                ControllerTestConnect.showTestConnectScene(remoteHost, remotePort);
+                ControllerTestConnect.showTestConnectScene();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -202,7 +201,7 @@ public class ControllerConnect {
                     boolean isServerMode = AnalysisConfig.getInstance().getBooleanValue(ConfigKey.CONFIG_IS_SERVER_MODE);
                     if (!isServerMode) {
                         try {
-                            initServer(localHost, Integer.parseInt(localPort), remoteHost, Integer.parseInt(remotePort));
+                            initServer(localHost, Integer.parseInt(localPort));
                             isOpen = true;
                             Image connectImg = new Image("ic_connect.png");
                             ivConnect.setImage(connectImg);
@@ -215,63 +214,78 @@ public class ControllerConnect {
             }
         });
         //显示首页图片
-        if (StringEnvoy.isNotEmpty(image)) {
-            ShowImageTask showImageTask = new ShowImageTask(image);
+        if (StringEnvoy.isNotEmpty(imageUrl)) {
+            ShowImageTask showImageTask = new ShowImageTask(imageUrl);
             TaskExecutorPoolManager.getInstance().runTask(showImageTask, null);
         }
     }
 
-    private void initServer(String localHost, int localPort, String remoteHost, int remotePort) {
+    private void initServer(String localHost, int localPort) {
         NioServerFactory.getFactory().open();
-        NioServerFactory.getFactory().addTask(new LocalProxyServer(localHost, localPort, remoteHost, remotePort));
+        MultipleProxyServer httpProxyServer = new MultipleProxyServer();
+        httpProxyServer.setAddress(localHost, localPort, false);
+        NioServerFactory.getFactory().addTask(httpProxyServer);
         if (!loHost.equals(localHost)) {
-            NioServerFactory.getFactory().addTask(new LocalProxyServer(loHost, localPort, remoteHost, remotePort));
+            MultipleProxyServer loServer = new MultipleProxyServer();
+            loServer.setAddress(loHost, localPort, false);
+            NioServerFactory.getFactory().addTask(loServer);
         }
     }
 
+
     private class ShowImageTask extends BaseLoopTask {
 
-        private String path;
+        private String imageUrl;
 
-        public ShowImageTask(String path) {
-            this.path = path;
+        public ShowImageTask(String imageUrl) {
+            this.imageUrl = imageUrl;
         }
 
         @Override
         protected void onRunLoopTask() {
-            boolean isConnect = isNodeReachable("163.177.151.110", 80);
-            if (isConnect) {
-                ivBg.setImage(new Image(path));
-                TaskExecutorPoolManager.getInstance().closeTask(this);
+            Properties properties = System.getProperties();
+            String dirPath = properties.getProperty("user.dir");
+            File file = new File(dirPath, "bg.jpg");
+            if (file.exists()) {
+                Image image = new Image("file:" + file.getAbsolutePath());
+                ivBg.setImage(image);
             } else {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                Map<String, Object> property = new HashMap<>();
+                property.put("User-Agent", "Mozilla/9.0 (Windows NT 11.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0");
+                XRequest request = new XRequest();
+                request.setUrl(imageUrl);
+                request.setSuccessMethod("onReceiveData");
+                request.setErrorMethod("onReceiveError");
+                request.setCallBackTarget(this);
+                request.setRequestMode(RequestMode.GET);
+                request.setResultType(byte[].class);
+                request.setRequestProperty(property);
+                XHttpConnect.getInstance().submitRequest(request);
+            }
+            TaskExecutorPoolManager.getInstance().closeTask(this);
+        }
+
+        @JavKeep
+        private void onReceiveData(XRequest request, XResponse response) {
+            if (response.getHttpData() != null) {
+                byte[] img = response.getHttpData();
+                Properties properties = System.getProperties();
+                String dirPath = properties.getProperty("user.dir");
+                String filePath = dirPath + File.separator + "bg.jpg";
+                FileHelper.writeFile(filePath, img);
+                Image image = new Image("file:" + filePath);
+                ivBg.setImage(image);
             }
         }
-    }
 
-    private boolean isNodeReachable(String hostname, int port) {
-        Socket socket = null;
-        try {
-            socket = new Socket();
-            socket.setSoTimeout(500);
-            socket.connect(new InetSocketAddress(hostname, port), 500);
-            return socket.isConnected();
-        } catch (Throwable e) {
-            LogDog.d("network error !!!");
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        @JavKeep
+        private void onReceiveError(XRequest request, XResponse response) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+            XHttpConnect.getInstance().submitRequest(request);
         }
-        return false;
     }
-
 }

@@ -1,5 +1,6 @@
 import connect.network.nio.NioClientFactory;
 import connect.network.nio.NioServerFactory;
+import connect.network.xhttp.XHttpConnect;
 import intercept.WatchConfigFileTask;
 import javafx.application.Application;
 import javafx.scene.image.Image;
@@ -18,6 +19,7 @@ public class CheetahMain extends Application {
             NioClientFactory.destroy();
             NioServerFactory.destroy();
             WatchConfigFileTask.getInstance().destroy();
+            XHttpConnect.destroy();
             TaskExecutorPoolManager.getInstance().destroyAll();
         });
     }
