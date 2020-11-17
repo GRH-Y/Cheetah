@@ -7,10 +7,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
-import test.PingTask;
-import test.TestConnect;
+import logic.PingTask;
 import ui.common.LogFx;
 
 import java.io.IOException;
@@ -43,10 +43,11 @@ public class ControllerTestConnect {
             return;
         }
         Stage newStage = new Stage();
+        newStage.getIcons().add(new Image("ic_logo.png"));
         FXMLLoader fxmlLoader = BaseController.showScene(newStage, "layout_test_connect.fxml", "Test Connect");
         ControllerTestConnect controllerTestConnect = fxmlLoader.getController();
-        String remoteHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_HOST);
-        String remotePort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PORT);
+        String remoteHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PROXY_HOST);
+        String remotePort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PROXY_PORT);
         controllerTestConnect.initView(remoteHost, remotePort);
         newStage.show();
         newStage.setOnCloseRequest(event -> {
@@ -74,7 +75,6 @@ public class ControllerTestConnect {
                 btnTCStart.setText("Start");
                 isOpen = false;
             } else {
-                initConnect();
                 ping();
                 btnTCStart.setText("Stop");
                 isOpen = true;
@@ -82,11 +82,6 @@ public class ControllerTestConnect {
         });
     }
 
-    private void initConnect() {
-        TestConnect connect = new TestConnect(tfTCAddress.getText(), Integer.parseInt(tfTCPort.getText()));
-        NioHPCClientFactory.getFactory(1).open();
-        NioHPCClientFactory.getFactory(1).addTask(connect);
-    }
 
     private void ping() {
         pingTask = new PingTask(tfTCAddress.getText());

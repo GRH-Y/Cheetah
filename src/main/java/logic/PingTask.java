@@ -1,4 +1,4 @@
-package test;
+package logic;
 
 import log.LogDog;
 import task.executor.BaseLoopTask;

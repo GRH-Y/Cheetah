@@ -3,5 +3,5 @@ out/
 .idea/
 .gradle/
 classes/
-src/test/
+src/logic.test/
 build/
