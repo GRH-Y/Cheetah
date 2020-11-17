@@ -1,6 +1,5 @@
 Manifest-Version: 1.0
-Class-Path: CurrencyNetConnect.jar CurrencyThreadTask.jar junit-4.12.j
- ar HttpProxyCore.jar JavaUtils.jar HttpProxyCore.jar hamcrest-core-1.
- 3.jar
+Class-Path: CurrencyNetConnect.jar CurrencyThreadTask.jar HttpProxyCore.
+ jar JavaUtils.jar
 Main-Class: CheetahMain
 

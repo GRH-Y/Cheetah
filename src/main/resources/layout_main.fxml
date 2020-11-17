@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="240.0" prefWidth="320.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.ControllerMain">
+    <children>
+        <ImageView fx:id="ivBg" fitHeight="240.0" fitWidth="320.0" nodeOrientation="INHERIT" pickOnBounds="true" preserveRatio="true">
+            <rotationAxis>
+                <Point3D />
+            </rotationAxis>
+        </ImageView>
+
+        <ImageView fx:id="ivConnect" fitHeight="40.0" fitWidth="40.0" layoutX="140.0" layoutY="100.0" nodeOrientation="INHERIT" pickOnBounds="true" preserveRatio="true">
+            <image>
+                <Image url="@ic_no_connect.png" />
+            </image>
+        </ImageView>
+        <Label fx:id="mainTestConnect" layoutX="19.0" layoutY="200.0" text="TestConnect" textFill="#dddddd">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Label>
+        <Label fx:id="mainCheckUpdate" layoutX="126.0" layoutY="200.0" text="CheckUpdate" textFill="#dddddd">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Label>
+        <Label fx:id="mainAbout" layoutX="259.0" layoutY="200.0" text="About" textFill="#dddddd">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Label>
+        <Label fx:id="mainVersion" layoutX="149.0" layoutY="219.0" text="v1.0" textFill="#dddddd">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Label>
+      <Label layoutX="250.0" layoutY="219.0" text="the world" textFill="#dddddd">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font></Label>
+    </children>
+</AnchorPane>
