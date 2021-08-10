@@ -1,7 +1,9 @@
 package logic;
 
 import com.sun.javafx.application.PlatformImpl;
-import connect.client.UpdateHandleClient;
+import connect.http.client.UpdateHandleClient;
+import connect.joggle.IUpdateConfirmCallBack;
+import connect.network.nio.NioClientFactory;
 import javafx.stage.Stage;
 import ui.controller.ControllerMain;
 import ui.controller.ControllerUpdate;
@@ -20,12 +22,17 @@ public class UIUpdateClient extends UpdateHandleClient {
     }
 
     @Override
-    public void onUpdateComplete() {
-        super.onUpdateComplete();
+    public void onClientCheckVersion(boolean isHasNewVersion, IUpdateConfirmCallBack callBack) {
+        if (!isHasNewVersion) {
+            NioClientFactory.getFactory().removeTask(this);
+            if (!isNeedShowDialog) {
+                return;
+            }
+        }
         PlatformImpl.runLater(() -> {
             //提示更新框
             try {
-                ControllerUpdate.showUpdate(mainStage, true);
+                ControllerUpdate.showUpdate(isHasNewVersion, callBack);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -33,18 +40,20 @@ public class UIUpdateClient extends UpdateHandleClient {
     }
 
     @Override
-    public void onClientCheckVersion(boolean isHasNewVersion) {
-        if (!isHasNewVersion && !isNeedShowDialog) {
-            return;
-        }
-        PlatformImpl.runLater(() -> {
-            //提示更新框
-            try {
-                ControllerUpdate.showUpdate(mainStage, false);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+    public void onUpdateComplete() {
+        super.onUpdateComplete();
+        System.exit(0);
+    }
+
+    @Override
+    public void onConfirm() {
+        super.onConfirm();
+    }
+
+    @Override
+    public void onCancel() {
+        super.onCancel();
+        ControllerUpdate.close();
     }
 
     @Override

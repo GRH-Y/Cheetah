@@ -3,13 +3,15 @@ package ui.controller;
 import com.sun.javafx.application.PlatformImpl;
 import config.AnalysisConfig;
 import config.ConfigKey;
+import connect.http.server.MultipleProxyServer;
 import connect.network.base.RequestMode;
 import connect.network.nio.NioClientFactory;
 import connect.network.nio.NioServerFactory;
 import connect.network.xhttp.XHttpConnect;
 import connect.network.xhttp.entity.XRequest;
 import connect.network.xhttp.entity.XResponse;
-import connect.server.MultipleProxyServer;
+import connect.socks5.server.Socks5Server;
+import cryption.DataSafeManager;
 import cryption.EncryptionType;
 import cryption.RSADataEnvoy;
 import intercept.*;
@@ -31,8 +33,7 @@ import util.joggle.JavKeep;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 
 public class ControllerMain {
@@ -60,6 +61,7 @@ public class ControllerMain {
 
     private String localHost;
     private int proxyPort;
+    private int socks5Port;
 
     private String updateHost;
     private int updatePort;
@@ -80,7 +82,7 @@ public class ControllerMain {
     }
 
     public static void showLoginScene(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = BaseController.showScene(stage, "layout_main.fxml", "wait connect ...");
+        FXMLLoader fxmlLoader = BaseController.showScene(stage, "res/layout_main.fxml", "wait connect ...");
         ControllerMain controllerMain = fxmlLoader.getController();
         controllerMain.init(stage);
     }
@@ -130,11 +132,11 @@ public class ControllerMain {
         String interceptPath = initEnv(interceptFileName);
         //添加 interceptTable.dat 文件的修改监听
         InterceptFileChangeListener interceptFileChangeListener = new InterceptFileChangeListener(interceptPath, interceptFileName);
-        WatchConfigFileTask.getInstance().addWatchFile(interceptFileChangeListener);
+        WatchFileManager.getInstance().addWatchFile(interceptFileChangeListener);
         //添加 proxyTable.dat 文件的修改监听
         String proxyPath = initEnv(proxyFileName);
         ProxyFileChangeListener proxyFileChangeListener = new ProxyFileChangeListener(proxyPath, proxyFileName);
-        WatchConfigFileTask.getInstance().addWatchFile(proxyFileChangeListener);
+        WatchFileManager.getInstance().addWatchFile(proxyFileChangeListener);
     }
 
     private void init(Stage stage) {
@@ -144,7 +146,8 @@ public class ControllerMain {
         currentCommand = properties.getProperty(ConfigKey.KEY_COMMAND);
         currentWorkDir = properties.getProperty(ConfigKey.KEY_USER_DIR) + File.separator;
         //解析配置文件
-        AnalysisConfig.getInstance().analysis(currentWorkDir + ConfigKey.FILE_CONFIG);
+        String configPath = initEnv(ConfigKey.FILE_CONFIG);
+        AnalysisConfig.getInstance().analysis(configPath);
         //初始化拦截黑名单过滤器
         initInterceptFilter();
         //初始化强制代理管理器
@@ -156,9 +159,11 @@ public class ControllerMain {
         if (EncryptionType.RSA.name().equals(encryption)) {
             initRSA();
         }
+        DataSafeManager.getInstance().init();
 
         localHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_LOCAL_HOST);
         proxyPort = AnalysisConfig.getInstance().getIntValue(ConfigKey.CONFIG_PROXY_LOCAL_PORT);
+        socks5Port = AnalysisConfig.getInstance().getIntValue(ConfigKey.CONFIG_SOCKS5_LOCAL_PORT);
         updateHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_UPDATE_HOST);
         updatePort = AnalysisConfig.getInstance().getIntValue(ConfigKey.CONFIG_REMOTE_UPDATE_PORT);
         String imageUrl = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_IMAGE);
@@ -192,7 +197,7 @@ public class ControllerMain {
                 //左点击
                 if (isOpen) {
                     NioServerFactory.getFactory().close();
-                    Image noConnectImg = new Image("ic_no_connect.png");
+                    Image noConnectImg = new Image("res/ic_no_connect.png");
                     ivConnect.setImage(noConnectImg);
                     mStage.setTitle("no connect");
                     isOpen = false;
@@ -200,9 +205,9 @@ public class ControllerMain {
                     boolean isServerMode = AnalysisConfig.getInstance().getBooleanValue(ConfigKey.CONFIG_IS_SERVER_MODE);
                     if (!isServerMode) {
                         try {
-                            initServer(localHost, proxyPort);
+                            initServer();
                             isOpen = true;
-                            Image connectImg = new Image("ic_connect.png");
+                            Image connectImg = new Image("res/ic_connect.png");
                             ivConnect.setImage(connectImg);
                             mStage.setTitle("listener: " + localHost + ":" + proxyPort);
                         } catch (Exception e) {
@@ -223,16 +228,25 @@ public class ControllerMain {
         initUpdate(false);
     }
 
-    private void initServer(String localHost, int localPort) {
+    private void initServer() {
+        //open proxy server
         NioServerFactory.getFactory().open();
         MultipleProxyServer httpProxyServer = new MultipleProxyServer();
-        httpProxyServer.setAddress(localHost, localPort);
+        httpProxyServer.setAddress(localHost, proxyPort);
         NioServerFactory.getFactory().addTask(httpProxyServer);
         if (!loHost.equals(localHost)) {
             MultipleProxyServer loServer = new MultipleProxyServer();
-            loServer.setAddress(loHost, localPort);
+            loServer.setAddress(loHost, proxyPort);
             NioServerFactory.getFactory().addTask(loServer);
         }
+
+        //open connect.socks5 proxy server
+        Socks5Server socks5Server = new Socks5Server();
+        socks5Server.setAddress(localHost, socks5Port);
+        NioServerFactory.getFactory().addTask(socks5Server);
+        socks5Server = new Socks5Server();
+        socks5Server.setAddress(loHost, socks5Port);
+        NioServerFactory.getFactory().addTask(socks5Server);
     }
 
     private void initUpdate(boolean isNeedShowDialog) {
@@ -261,7 +275,7 @@ public class ControllerMain {
                 Image image = new Image("file:" + imageFile.getAbsolutePath());
                 ivBg.setImage(image);
             } else {
-                Map<String, Object> property = new HashMap<>();
+                LinkedHashMap<Object, Object> property = new LinkedHashMap<>();
                 property.put("User-Agent", "Mozilla/9.0 (Windows NT 11.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0");
                 XRequest request = new XRequest();
                 request.setUrl(imageUrl);

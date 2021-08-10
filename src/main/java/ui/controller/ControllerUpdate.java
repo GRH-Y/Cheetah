@@ -1,5 +1,7 @@
 package ui.controller;
 
+import config.ConfigKey;
+import connect.joggle.IUpdateConfirmCallBack;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
@@ -30,29 +32,41 @@ public class ControllerUpdate {
     @FXML
     private Button updateOk;
 
-    private Stage currentStage;
+    @FXML
+    private Label updateVersion;
 
-    public static void showUpdate(Stage mainStage, boolean isNewVersion) throws IOException {
+    private static Stage currentStage;
+
+    public static void showUpdate(boolean isNewVersion, IUpdateConfirmCallBack callBack) throws IOException {
         Stage newStage = new Stage();
-        newStage.getIcons().add(new Image("ic_logo.png"));
-        FXMLLoader fxmlLoader = BaseController.showScene(newStage, "layout_update_dialog.fxml", "Update Dialog");
+        newStage.setResizable(false);
+        newStage.getIcons().add(new Image("res/ic_logo.png"));
+        FXMLLoader fxmlLoader = BaseController.showScene(newStage, "res/layout_update_dialog.fxml", "Update Dialog");
         ControllerUpdate controllerTestConnect = fxmlLoader.getController();
-        controllerTestConnect.initView(newStage, mainStage, isNewVersion);
+        controllerTestConnect.initView(newStage, isNewVersion, callBack);
         newStage.show();
     }
 
-    private void initView(Stage currentStage, Stage mainStage, boolean isNewVersion) {
+    public static void close() {
+        if (currentStage != null) {
+            currentStage.close();
+            currentStage = null;
+        }
+    }
+
+    private void initView(Stage currentStage, boolean isNewVersion, IUpdateConfirmCallBack callBack) {
         this.currentStage = currentStage;
+        updateVersion.setText(ConfigKey.currentVersion + ".0");
         if (isNewVersion) {
             updateOk.setVisible(false);
             updateNotNewVersionTitle.setVisible(false);
-            updateLate.setOnMouseClicked(event ->
-                    this.currentStage.close()
-            );
-            updateNow.setOnMouseClicked(event -> {
+            updateLate.setOnMouseClicked(event -> {
+                callBack.onCancel();
                 this.currentStage.close();
-                mainStage.close();
-                System.exit(0);
+            });
+            updateNow.setOnMouseClicked(event -> {
+                callBack.onConfirm();
+
             });
         } else {
             updateLate.setVisible(false);

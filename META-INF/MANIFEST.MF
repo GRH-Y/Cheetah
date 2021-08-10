@@ -1,5 +1,3 @@
 Manifest-Version: 1.0
-Class-Path: CurrencyNetConnect.jar CurrencyThreadTask.jar HttpProxyCore.
- jar JavaUtils.jar
 Main-Class: CheetahMain
 

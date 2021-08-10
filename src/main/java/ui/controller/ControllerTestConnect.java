@@ -43,8 +43,9 @@ public class ControllerTestConnect {
             return;
         }
         Stage newStage = new Stage();
-        newStage.getIcons().add(new Image("ic_logo.png"));
-        FXMLLoader fxmlLoader = BaseController.showScene(newStage, "layout_test_connect.fxml", "Test Connect");
+        newStage.setResizable(false);
+        newStage.getIcons().add(new Image("res/ic_logo.png"));
+        FXMLLoader fxmlLoader = BaseController.showScene(newStage, "res/layout_test_connect.fxml", "Test Connect");
         ControllerTestConnect controllerTestConnect = fxmlLoader.getController();
         String remoteHost = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PROXY_HOST);
         String remotePort = AnalysisConfig.getInstance().getValue(ConfigKey.CONFIG_REMOTE_PROXY_PORT);
